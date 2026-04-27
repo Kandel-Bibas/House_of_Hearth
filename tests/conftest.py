@@ -97,3 +97,27 @@ def fake_keychain(monkeypatch):
     monkeypatch.setattr(keychain.keyring, "delete_password", fake_delete)
 
     return store
+
+
+# ----- Plaid client mocks (shared across tests/plaid/ and tests/api/) -----------
+from unittest.mock import MagicMock as _MagicMock
+
+
+@pytest.fixture
+def fake_plaid_client():
+    """A MagicMock standing in for plaid.api.plaid_api.PlaidApi."""
+    return _MagicMock(name="fake_plaid_client")
+
+
+def _wrap(payload: dict):
+    obj = _MagicMock()
+    obj.to_dict.return_value = payload
+    for key, value in payload.items():
+        setattr(obj, key, value)
+    return obj
+
+
+@pytest.fixture
+def make_response():
+    """Wrap a dict so `.to_dict()` and attribute access both work."""
+    return _wrap
