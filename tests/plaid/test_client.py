@@ -15,16 +15,21 @@ def test_make_plaid_client_returns_plaid_api_object():
 
 
 def test_make_plaid_client_routes_each_env_to_correct_host():
-    """Each env should produce a client pointing at the matching Plaid host."""
+    """Each live env produces a client pointing at the matching Plaid host."""
     for env, expected_host in [
         (PlaidEnv.SANDBOX, "sandbox.plaid.com"),
-        (PlaidEnv.DEVELOPMENT, "development.plaid.com"),
         (PlaidEnv.PRODUCTION, "production.plaid.com"),
     ]:
         client = make_plaid_client(env=env, client_id="cid", secret="sec")
-        # The host is on the underlying api_client.configuration.host.
         host = client.api_client.configuration.host
         assert expected_host in host, f"env={env} produced host {host}"
+
+
+def test_development_env_raises_with_clear_message():
+    """Plaid retired Development in early 2025; constructing a client should
+    fail loudly rather than fail later with a DNS error."""
+    with pytest.raises(ValueError, match="DEVELOPMENT"):
+        make_plaid_client(env=PlaidEnv.DEVELOPMENT, client_id="cid", secret="sec")
 
 
 def test_invalid_env_string_raises():

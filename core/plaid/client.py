@@ -36,6 +36,14 @@ def make_plaid_client(
     *, env: PlaidEnv, client_id: str, secret: str
 ) -> plaid_api.PlaidApi:
     """Create a configured PlaidApi instance for the given environment."""
+    if env == PlaidEnv.DEVELOPMENT:
+        raise ValueError(
+            "PlaidEnv.DEVELOPMENT is no longer supported. Plaid retired the "
+            "Development environment in early 2025. Use PlaidEnv.SANDBOX for "
+            "testing or PlaidEnv.PRODUCTION (with Plaid's free Limited "
+            "Production tier, up to 100 Items) for real bank linking. "
+            "Set PLAID_ENV=sandbox or PLAID_ENV=production in your .env."
+        )
     configuration = plaid.Configuration(
         host=_HOSTS[env],
         api_key={
