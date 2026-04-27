@@ -180,3 +180,158 @@ def test_apply_for_one_item_does_not_touch_another_item(session, seeded_chain):
     other_item = session.scalar(select(Item).where(Item.item_id == "item_other"))
     assert first_item.transactions_cursor is None
     assert other_item.transactions_cursor == "new_first_cursor"
+
+
+# ============================================================================
+# sync_transactions (multi-page) tests
+# ============================================================================
+from unittest.mock import MagicMock
+
+from core.plaid.sync import sync_transactions
+from plaid.exceptions import ApiException
+
+
+def _wrap_page(payload: dict) -> MagicMock:
+    obj = MagicMock()
+    obj.to_dict.return_value = payload
+    for key, value in payload.items():
+        setattr(obj, key, value)
+    return obj
+
+
+def test_sync_transactions_loops_until_has_more_false(
+    session, seeded_chain, fake_plaid_client
+):
+    """Three-page response — all 3 pages applied, final cursor is the last next_cursor."""
+    fake_plaid_client.transactions_sync.side_effect = [
+        _wrap_page(
+            {
+                "added": [_txn("p1_txn1")],
+                "modified": [],
+                "removed": [],
+                "has_more": True,
+                "next_cursor": "c1",
+            }
+        ),
+        _wrap_page(
+            {
+                "added": [_txn("p2_txn1"), _txn("p2_txn2")],
+                "modified": [],
+                "removed": [],
+                "has_more": True,
+                "next_cursor": "c2",
+            }
+        ),
+        _wrap_page(
+            {
+                "added": [_txn("p3_txn1")],
+                "modified": [],
+                "removed": [],
+                "has_more": False,
+                "next_cursor": "c3_final",
+            }
+        ),
+    ]
+
+    sync_transactions(
+        client=fake_plaid_client,
+        session=session,
+        item_id=seeded_chain["item"].item_id,
+        access_token="access-sandbox-xyz",
+    )
+
+    txns = session.scalars(select(Transaction)).all()
+    assert {t.transaction_id for t in txns} == {"p1_txn1", "p2_txn1", "p2_txn2", "p3_txn1"}
+
+    item = session.scalar(select(Item).where(Item.item_id == seeded_chain["item"].item_id))
+    assert item.transactions_cursor == "c3_final"
+    assert item.last_sync_status == "ok"
+    assert item.last_sync_error is None
+
+
+def test_sync_transactions_passes_cursor_from_item_on_first_call(
+    session, seeded_chain, fake_plaid_client
+):
+    """If the Item already has a cursor, /transactions/sync is called with it."""
+    item = seeded_chain["item"]
+    item.transactions_cursor = "saved_cursor_from_last_run"
+    session.commit()
+
+    fake_plaid_client.transactions_sync.return_value = _wrap_page(
+        {
+            "added": [],
+            "modified": [],
+            "removed": [],
+            "has_more": False,
+            "next_cursor": "saved_cursor_from_last_run",
+        }
+    )
+
+    sync_transactions(
+        client=fake_plaid_client,
+        session=session,
+        item_id=item.item_id,
+        access_token="access-sandbox-xyz",
+    )
+
+    # The first call's request body included the saved cursor.
+    first_call = fake_plaid_client.transactions_sync.call_args_list[0]
+    request = first_call.args[0]
+    # The plaid request object exposes .cursor as an attr.
+    assert request.cursor == "saved_cursor_from_last_run"
+
+
+def test_sync_transactions_classifies_plaid_error_and_does_not_advance(
+    session, seeded_chain, fake_plaid_client
+):
+    """A Plaid ApiException for a non-retryable code marks the Item error and re-raises."""
+    api_exc = ApiException(status=400)
+    api_exc.body = '{"error_code": "ITEM_LOGIN_REQUIRED", "error_message": "relink please"}'
+    fake_plaid_client.transactions_sync.side_effect = api_exc
+
+    with pytest.raises(ApiException):
+        sync_transactions(
+            client=fake_plaid_client,
+            session=session,
+            item_id=seeded_chain["item"].item_id,
+            access_token="access-sandbox-xyz",
+        )
+
+    # The implementation should have committed the error status before re-raising.
+    session.expire_all()
+    item = session.scalar(select(Item).where(Item.item_id == seeded_chain["item"].item_id))
+    assert item.last_sync_status == "error"
+    assert "ITEM_LOGIN_REQUIRED" in (item.last_sync_error or "")
+
+
+def test_sync_transactions_retries_product_not_ready(
+    session, seeded_chain, fake_plaid_client, monkeypatch
+):
+    """PRODUCT_NOT_READY first → succeeds on retry. The monkeypatched sleep keeps the test fast."""
+    api_exc = ApiException(status=400)
+    api_exc.body = '{"error_code": "PRODUCT_NOT_READY", "error_message": "still backfilling"}'
+
+    success_page = _wrap_page(
+        {
+            "added": [_txn("p1_txn1")],
+            "modified": [],
+            "removed": [],
+            "has_more": False,
+            "next_cursor": "c1",
+        }
+    )
+    fake_plaid_client.transactions_sync.side_effect = [api_exc, success_page]
+
+    # Don't actually sleep.
+    monkeypatch.setattr("core.plaid.sync.time.sleep", lambda _seconds: None)
+
+    sync_transactions(
+        client=fake_plaid_client,
+        session=session,
+        item_id=seeded_chain["item"].item_id,
+        access_token="access-sandbox-xyz",
+    )
+
+    item = session.scalar(select(Item).where(Item.item_id == seeded_chain["item"].item_id))
+    assert item.last_sync_status == "ok"
+    assert item.transactions_cursor == "c1"

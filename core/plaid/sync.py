@@ -5,13 +5,19 @@ the cursor advances if and only if every row in the page is persisted.
 The caller is responsible for the surrounding `session.commit()` so the cursor
 write and the row writes share a single SQL transaction.
 """
+import json
+import time
 from datetime import date, datetime, timezone
 from typing import Any
 
+from plaid.api.plaid_api import PlaidApi
+from plaid.exceptions import ApiException
+from plaid.model.transactions_sync_request import TransactionsSyncRequest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from core.db import Item, Transaction
+from core.plaid.errors import classify_plaid_error, is_retryable
 
 
 def _utcnow_naive() -> datetime:
@@ -108,3 +114,81 @@ def apply_sync_page(session: Session, *, item_id: str, page: Any) -> None:
     # 4. Advance cursor + sync timestamp on the Item row, in the same SQL transaction.
     item.transactions_cursor = page.next_cursor
     item.last_sync_at = now
+
+
+_RETRY_DELAYS_SECONDS = [1, 2, 4, 8, 16]  # exponential backoff for retryable errors
+
+
+def _extract_error_code_and_message(exc: ApiException) -> tuple[str, str]:
+    """Pull error_code / error_message out of the JSON body Plaid returns on errors."""
+    try:
+        body = json.loads(exc.body) if isinstance(exc.body, str) else (exc.body or {})
+    except (ValueError, TypeError):
+        body = {}
+    return body.get("error_code", "UNKNOWN_ERROR"), body.get("error_message", str(exc))
+
+
+def sync_transactions(
+    *,
+    client: PlaidApi,
+    session: Session,
+    item_id: str,
+    access_token: str,
+) -> None:
+    """Drive /transactions/sync to has_more=False, applying each page atomically.
+
+    On retryable Plaid errors (PRODUCT_NOT_READY, RATE_LIMIT_EXCEEDED, INSTITUTION_*),
+    backs off exponentially and retries the same page. On non-retryable errors,
+    classifies, writes status='error' to the Item, and re-raises.
+    """
+    item = session.scalar(select(Item).where(Item.item_id == item_id))
+    if item is None:
+        raise LookupError(f"Item not found: {item_id}")
+
+    cursor = item.transactions_cursor
+
+    while True:
+        request = TransactionsSyncRequest(
+            access_token=access_token,
+            cursor=cursor or "",
+        )
+        try:
+            response = _call_with_retries(client.transactions_sync, request)
+        except ApiException as exc:
+            code, msg = _extract_error_code_and_message(exc)
+            outcome = classify_plaid_error(code, msg)
+            item.last_sync_status = outcome.status
+            item.last_sync_error = outcome.error
+            session.commit()
+            raise
+
+        page = response  # has .added, .modified, .removed, .has_more, .next_cursor
+        apply_sync_page(session, item_id=item_id, page=page)
+        # Each page commits independently — a 500-page Item that fails on page 487
+        # keeps pages 1-486 committed and resumes at 487 next run.
+        session.commit()
+
+        cursor = page.next_cursor
+        if not page.has_more:
+            break
+
+    item.last_sync_status = "ok"
+    item.last_sync_error = None
+    session.commit()
+
+
+def _call_with_retries(api_call, request) -> Any:
+    """Call a Plaid API method with exponential backoff on retryable errors.
+
+    Raises the final ApiException if retries are exhausted, or any non-retryable
+    error on first occurrence.
+    """
+    delays = list(_RETRY_DELAYS_SECONDS)
+    while True:
+        try:
+            return api_call(request)
+        except ApiException as exc:
+            code, _ = _extract_error_code_and_message(exc)
+            if not is_retryable(code) or not delays:
+                raise
+            time.sleep(delays.pop(0))
