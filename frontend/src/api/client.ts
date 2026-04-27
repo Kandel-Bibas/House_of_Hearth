@@ -52,6 +52,8 @@ export interface Account {
 export interface Transaction {
   transaction_id: string;
   account_id: string;
+  account_name: string;
+  institution_name: string;
   date: string | null;
   authorized_date: string | null;
   amount: number;

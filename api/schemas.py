@@ -35,6 +35,8 @@ class AccountOut(BaseModel):
 class TransactionOut(BaseModel):
     transaction_id: str
     account_id: str
+    account_name: str
+    institution_name: str
     date: Optional[str] = None
     authorized_date: Optional[str] = None
     amount: float

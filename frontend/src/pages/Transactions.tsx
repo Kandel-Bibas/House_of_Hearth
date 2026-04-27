@@ -63,6 +63,7 @@ export function Transactions() {
               <tr>
                 <th className="px-4 py-2">Date</th>
                 <th className="px-4 py-2">Merchant</th>
+                <th className="px-4 py-2">Account</th>
                 <th className="px-4 py-2">Category</th>
                 <th className="px-4 py-2 text-right">Amount</th>
               </tr>
@@ -70,7 +71,7 @@ export function Transactions() {
             <tbody className="divide-y divide-gray-100">
               {data.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
                     No transactions in this range.
                   </td>
                 </tr>
@@ -81,6 +82,10 @@ export function Transactions() {
                   <td className="px-4 py-2">
                     <div className="font-medium">{t.merchant_name || t.name}</div>
                     {t.pending && <div className="text-xs text-amber-600">Pending</div>}
+                  </td>
+                  <td className="px-4 py-2 text-gray-700">
+                    <div>{t.institution_name}</div>
+                    <div className="text-xs text-gray-500">{t.account_name}</div>
                   </td>
                   <td className="px-4 py-2 text-gray-500 text-xs">
                     {t.category_primary || "—"}

@@ -8,13 +8,15 @@ from typing import Any, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from core.db import Transaction
+from core.db import Account, Institution, Item, Transaction
 
 
-def _row_to_dict(t: Transaction) -> dict[str, Any]:
+def _row_to_dict(t: Transaction, account_name: str, institution_name: str) -> dict[str, Any]:
     return {
         "transaction_id": t.transaction_id,
         "account_id": t.account_id,
+        "account_name": account_name,
+        "institution_name": institution_name,
         "date": t.date.isoformat() if t.date else None,
         "authorized_date": t.authorized_date.isoformat() if t.authorized_date else None,
         "amount": t.amount,
@@ -46,10 +48,18 @@ def search_transactions(
 ) -> list[dict[str, Any]]:
     """Return matching transactions as JSON-safe dicts, newest first.
 
+    Each row includes account_name and institution_name from the joined
+    Account → Item → Institution chain, so the UI doesn't need a second fetch.
+
     Defaults: excludes soft-deleted rows (removed_at IS NULL). Pass
     `include_removed=True` to include them.
     """
-    stmt = select(Transaction)
+    stmt = (
+        select(Transaction, Account.name, Institution.name)
+        .join(Account, Account.account_id == Transaction.account_id)
+        .join(Item, Item.item_id == Account.item_id)
+        .join(Institution, Institution.institution_id == Item.institution_id)
+    )
 
     if not include_removed:
         stmt = stmt.where(Transaction.removed_at.is_(None))
@@ -75,5 +85,5 @@ def search_transactions(
     if limit is not None:
         stmt = stmt.limit(limit)
 
-    rows = session.scalars(stmt).all()
-    return [_row_to_dict(t) for t in rows]
+    rows = session.execute(stmt).all()
+    return [_row_to_dict(t, account_name, institution_name) for t, account_name, institution_name in rows]
