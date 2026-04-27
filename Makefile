@@ -8,14 +8,14 @@ PYTEST := $(VENV)/bin/pytest
 
 help:
 	@echo "Targets:"
-	@echo "  make dev      — run uvicorn (Plan 5 will add Vite alongside)"
+	@echo "  make dev      — run uvicorn (api) + Vite (ui) together"
 	@echo "  make test     — run the full test suite"
 	@echo "  make migrate  — run alembic upgrade head"
 	@echo "  make clean    — remove .pyc files and pytest cache"
 
 dev:
-	@echo "Starting Finance Tracker on http://localhost:8000 (Ctrl-C to stop)"
-	$(UVICORN) api.main:app --host 127.0.0.1 --port 8000 --reload
+	@echo "Starting Finance Tracker — backend on :8000, frontend on :5173 (Ctrl-C to stop)"
+	$(PYTHON) scripts/run-dev.py
 
 test:
 	$(PYTEST) -v
