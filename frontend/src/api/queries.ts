@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  apiGet,
-  apiPost,
+import { apiGet, apiPost } from "./client";
+import type {
   Account,
   CategorySpendRow,
   Holding,

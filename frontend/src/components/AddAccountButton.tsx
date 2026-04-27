@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { usePlaidLink, PlaidLinkOnSuccessMetadata } from "react-plaid-link";
+import { usePlaidLink } from "react-plaid-link";
+import type { PlaidLinkOnSuccessMetadata } from "react-plaid-link";
 import { Plus } from "lucide-react";
 
 import { useExchangePublicToken, useLinkToken } from "../api/queries";
