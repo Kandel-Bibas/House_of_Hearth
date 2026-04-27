@@ -288,11 +288,13 @@ def test_limit_truncates_results(session, queries_seed):
 
 
 def test_combined_filters(session, queries_seed):
-    """Date + category + min_amount in one call."""
+    """Date + category + min_amount in one call. Tight date range (4/1-4/3)
+    isolates txn_grocery_1 (4/1, $42.50, FOOD_AND_DRINK) from txn_restaurant_1
+    (4/5, $85.00, also FOOD_AND_DRINK)."""
     results = search_transactions(
         session,
         start_date=date(2026, 4, 1),
-        end_date=date(2026, 4, 10),
+        end_date=date(2026, 4, 3),
         category_primary="FOOD_AND_DRINK",
         min_amount=40.0,
     )
