@@ -23,7 +23,8 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Routers are mounted in subsequent tasks.
+    from api.routes import plaid as plaid_routes
+    app.include_router(plaid_routes.router)
     return app
 
 
