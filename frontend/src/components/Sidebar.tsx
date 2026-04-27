@@ -12,7 +12,7 @@ const items = [
 export function Sidebar() {
   return (
     <nav className="w-56 shrink-0 border-r border-border bg-card p-4">
-      <h1 className="text-xl font-semibold mb-6">Finance Tracker</h1>
+      <h1 className="text-xl font-semibold mb-6 text-foreground">Finance Tracker</h1>
       <ul className="flex flex-col gap-1">
         {items.map(({ to, label, icon: Icon }) => (
           <li key={to}>
@@ -21,8 +21,10 @@ export function Sidebar() {
               end={to === "/"}
               className={({ isActive }) =>
                 clsx(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
-                  isActive ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
+                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent/50"
                 )
               }
             >

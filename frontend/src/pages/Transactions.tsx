@@ -3,9 +3,44 @@ import { useState } from "react";
 import { useTransactions } from "../api/queries";
 import { DateRangeFilter } from "../components/DateRangeFilter";
 import { Money } from "../components/Money";
+import { Input } from "../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
+import { Card } from "../components/ui/card";
 
 const today = new Date().toISOString().slice(0, 10);
 const ninetyDaysAgo = new Date(Date.now() - 90 * 86400_000).toISOString().slice(0, 10);
+
+const ALL_CATEGORIES = "__all__";
+
+const CATEGORIES: { value: string; label: string }[] = [
+  { value: "FOOD_AND_DRINK", label: "Food & Drink" },
+  { value: "TRANSPORTATION", label: "Transportation" },
+  { value: "GENERAL_MERCHANDISE", label: "General Merchandise" },
+  { value: "INCOME", label: "Income" },
+  { value: "ENTERTAINMENT", label: "Entertainment" },
+  { value: "RENT_AND_UTILITIES", label: "Rent & Utilities" },
+  { value: "MEDICAL", label: "Medical" },
+  { value: "TRAVEL", label: "Travel" },
+  { value: "GENERAL_SERVICES", label: "General Services" },
+  { value: "LOAN_PAYMENTS", label: "Loan Payments" },
+  { value: "TRANSFER_IN", label: "Transfer In" },
+  { value: "TRANSFER_OUT", label: "Transfer Out" },
+  { value: "BANK_FEES", label: "Bank Fees" },
+];
 
 export function Transactions() {
   const [start, setStart] = useState(ninetyDaysAgo);
@@ -27,77 +62,73 @@ export function Transactions() {
       <h2 className="text-2xl font-semibold mb-6">Transactions</h2>
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <DateRangeFilter start={start} end={end} onChange={(s, e) => { setStart(s); setEnd(e); }} />
-        <input
+        <Input
           type="text"
           placeholder="Search merchant…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded border border-gray-300 px-3 py-1 text-sm"
+          className="w-auto"
         />
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="rounded border border-gray-300 px-2 py-1 text-sm"
+        <Select
+          value={category === "" ? ALL_CATEGORIES : category}
+          onValueChange={(v) => setCategory(v === ALL_CATEGORIES ? "" : v)}
         >
-          <option value="">All categories</option>
-          <option value="FOOD_AND_DRINK">Food & Drink</option>
-          <option value="TRANSPORTATION">Transportation</option>
-          <option value="GENERAL_MERCHANDISE">General Merchandise</option>
-          <option value="INCOME">Income</option>
-          <option value="ENTERTAINMENT">Entertainment</option>
-          <option value="RENT_AND_UTILITIES">Rent & Utilities</option>
-          <option value="MEDICAL">Medical</option>
-          <option value="TRAVEL">Travel</option>
-          <option value="GENERAL_SERVICES">General Services</option>
-          <option value="LOAN_PAYMENTS">Loan Payments</option>
-          <option value="TRANSFER_IN">Transfer In</option>
-          <option value="TRANSFER_OUT">Transfer Out</option>
-          <option value="BANK_FEES">Bank Fees</option>
-        </select>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="All categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_CATEGORIES}>All categories</SelectItem>
+            {CATEGORIES.map((c) => (
+              <SelectItem key={c.value} value={c.value}>
+                {c.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-      {isLoading && <p className="text-gray-500">Loading…</p>}
+      {isLoading && <p className="text-muted-foreground">Loading…</p>}
       {data && (
-        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
-              <tr>
-                <th className="px-4 py-2">Date</th>
-                <th className="px-4 py-2">Merchant</th>
-                <th className="px-4 py-2">Account</th>
-                <th className="px-4 py-2">Category</th>
-                <th className="px-4 py-2 text-right">Amount</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+        <Card size="sm" className="py-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Merchant</TableHead>
+                <TableHead>Account</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {data.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
                     No transactions in this range.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
               {data.map((t) => (
-                <tr key={t.transaction_id}>
-                  <td className="px-4 py-2 text-gray-600">{t.date}</td>
-                  <td className="px-4 py-2">
+                <TableRow key={t.transaction_id}>
+                  <TableCell className="text-muted-foreground">{t.date}</TableCell>
+                  <TableCell>
                     <div className="font-medium">{t.merchant_name || t.name}</div>
-                    {t.pending && <div className="text-xs text-amber-600">Pending</div>}
-                  </td>
-                  <td className="px-4 py-2 text-gray-700">
+                    {t.pending && <div className="text-xs text-amber-500">Pending</div>}
+                  </TableCell>
+                  <TableCell>
                     <div>{t.institution_name}</div>
-                    <div className="text-xs text-gray-500">{t.account_name}</div>
-                  </td>
-                  <td className="px-4 py-2 text-gray-500 text-xs">
+                    <div className="text-xs text-muted-foreground">{t.account_name}</div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs">
                     {t.category_primary || "—"}
-                  </td>
-                  <td className="px-4 py-2 text-right font-medium">
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
                     <Money value={t.amount} currency={t.iso_currency_code} />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Card>
       )}
     </div>
   );
