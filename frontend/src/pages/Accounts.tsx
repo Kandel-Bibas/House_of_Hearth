@@ -1,7 +1,10 @@
+import { Link } from "react-router-dom";
+
 import { useAccounts, useSyncStatus } from "../api/queries";
 import { AddAccountButton } from "../components/AddAccountButton";
 import { Money } from "../components/Money";
 import { SyncButton } from "../components/SyncButton";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 
 export function Accounts() {
@@ -32,38 +35,60 @@ export function Accounts() {
           {accounts.map((a) => {
             const status = statusByItem.get(a.item_id);
             return (
-              <Card key={a.account_id} size="sm">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-foreground">{a.institution_name}</span>
-                        <span className="text-muted-foreground">·</span>
-                        <span className="text-foreground">{a.name}</span>
-                        {a.mask && (
-                          <span className="text-muted-foreground text-sm">•••• {a.mask}</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {a.type} {a.subtype && `· ${a.subtype}`}
-                        {status?.last_sync_error && (
-                          <span className="ml-2 text-destructive">⚠ {status.last_sync_error}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-medium">
-                        <Money value={a.current_balance} currency={a.iso_currency_code} />
-                      </div>
-                      {a.limit_balance != null && (
-                        <div className="text-xs text-muted-foreground">
-                          Limit: <Money value={a.limit_balance} currency={a.iso_currency_code} />
+              <Link
+                key={a.account_id}
+                to={`/accounts/${a.account_id}`}
+                className="block focus-visible:outline-none"
+              >
+                <Card
+                  size="sm"
+                  className="transition-colors hover:bg-muted/40 hover:ring-primary/40"
+                >
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          {a.institution_logo && (
+                            <AvatarImage
+                              src={`data:image/png;base64,${a.institution_logo}`}
+                              alt={a.institution_name}
+                            />
+                          )}
+                          <AvatarFallback>
+                            {a.institution_name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-foreground">{a.institution_name}</span>
+                            <span className="text-muted-foreground">·</span>
+                            <span className="text-foreground">{a.name}</span>
+                            {a.mask && (
+                              <span className="text-muted-foreground text-sm">•••• {a.mask}</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {a.type} {a.subtype && `· ${a.subtype}`}
+                            {status?.last_sync_error && (
+                              <span className="ml-2 text-destructive">⚠ {status.last_sync_error}</span>
+                            )}
+                          </div>
                         </div>
-                      )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-medium">
+                          <Money value={a.current_balance} currency={a.iso_currency_code} />
+                        </div>
+                        {a.limit_balance != null && (
+                          <div className="text-xs text-muted-foreground">
+                            Limit: <Money value={a.limit_balance} currency={a.iso_currency_code} />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-              </Card>
+                  </CardHeader>
+                </Card>
+              </Link>
             );
           })}
         </div>

@@ -7,6 +7,7 @@ import App from "./App";
 import { Dashboard } from "./pages/Dashboard";
 import { Transactions } from "./pages/Transactions";
 import { Accounts } from "./pages/Accounts";
+import { AccountDetail } from "./pages/AccountDetail";
 import { Holdings } from "./pages/Holdings";
 import "./index.css";
 
@@ -23,6 +24,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route index element={<Dashboard />} />
             <Route path="transactions" element={<Transactions />} />
             <Route path="accounts" element={<Accounts />} />
+            <Route path="accounts/:accountId" element={<AccountDetail />} />
             <Route path="holdings" element={<Holdings />} />
           </Route>
         </Routes>
