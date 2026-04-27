@@ -41,6 +41,10 @@ def make_plaid_client(
         api_key={
             "clientId": client_id,
             "secret": secret,
+            # Required: without this, plaid-python sends `Plaid-Version: None`
+            # and urllib3 rejects the header with TypeError. Pin to the latest
+            # stable Plaid API version.
+            "plaidVersion": "2020-09-14",
         },
     )
     api_client = plaid.ApiClient(configuration)

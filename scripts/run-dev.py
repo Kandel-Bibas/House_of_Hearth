@@ -27,9 +27,13 @@ def main():
         print("frontend/node_modules missing — run `cd frontend && pnpm install` (or `npm install`) first.")
         sys.exit(1)
 
+    env_file = REPO_ROOT / ".env"
+    backend_args = [str(VENV / "bin" / "uvicorn"), "api.main:app",
+                    "--host", "127.0.0.1", "--port", "8000", "--reload"]
+    if env_file.exists():
+        backend_args += ["--env-file", str(env_file)]
     backend = subprocess.Popen(
-        [str(VENV / "bin" / "uvicorn"), "api.main:app",
-         "--host", "127.0.0.1", "--port", "8000", "--reload"],
+        backend_args,
         cwd=REPO_ROOT,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
