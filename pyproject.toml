@@ -8,6 +8,7 @@ dependencies = [
     "alembic>=1.13,<2",
     "cryptography>=42.0",
     "keyring>=25.0",
+    "plaid-python>=24.0,<32",
 ]
 
 [project.optional-dependencies]
