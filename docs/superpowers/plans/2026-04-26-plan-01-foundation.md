@@ -480,7 +480,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 def _utcnow() -> datetime:
@@ -511,6 +511,7 @@ class Item(Base):
     institution_id: Mapped[str] = mapped_column(
         ForeignKey("institutions.institution_id"), nullable=False
     )
+    institution: Mapped["Institution"] = relationship()
     access_token_ciphertext: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     transactions_cursor: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     last_sync_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
@@ -526,6 +527,7 @@ class Account(Base):
 
     account_id: Mapped[str] = mapped_column(String, primary_key=True)
     item_id: Mapped[str] = mapped_column(ForeignKey("items.item_id"), nullable=False)
+    item: Mapped["Item"] = relationship()
     name: Mapped[str] = mapped_column(String, nullable=False)
     official_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     type: Mapped[str] = mapped_column(String, nullable=False)  # depository | credit | investment | loan
@@ -546,6 +548,7 @@ class Transaction(Base):
 
     transaction_id: Mapped[str] = mapped_column(String, primary_key=True)
     account_id: Mapped[str] = mapped_column(ForeignKey("accounts.account_id"), nullable=False)
+    account: Mapped["Account"] = relationship()
     date: Mapped[date] = mapped_column(Date, nullable=False)
     authorized_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     amount: Mapped[float] = mapped_column(Float, nullable=False)  # + outflow, - inflow (Plaid convention)
@@ -589,7 +592,9 @@ class Holding(Base):
     __tablename__ = "holdings"
 
     account_id: Mapped[str] = mapped_column(ForeignKey("accounts.account_id"), nullable=False)
+    account: Mapped["Account"] = relationship()
     security_id: Mapped[str] = mapped_column(ForeignKey("securities.security_id"), nullable=False)
+    security: Mapped["Security"] = relationship()
     quantity: Mapped[float] = mapped_column(Float, nullable=False)
     institution_price: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     institution_value: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
