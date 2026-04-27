@@ -1,7 +1,25 @@
+import json
+from datetime import date, datetime
+
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 DEFAULT_DATABASE_URL = "sqlite:///finance.db"
+
+
+def _json_default(obj):
+    """JSON encoder fallback for types stdlib json doesn't handle.
+
+    Plaid's `.to_dict()` returns nested dicts that include `datetime.date`
+    values (e.g., transaction.authorized_date inside raw_payload).
+    """
+    if isinstance(obj, (date, datetime)):
+        return obj.isoformat()
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+
+def _json_serializer(obj):
+    return json.dumps(obj, default=_json_default)
 
 
 def make_engine(database_url: str = DEFAULT_DATABASE_URL):
@@ -11,7 +29,7 @@ def make_engine(database_url: str = DEFAULT_DATABASE_URL):
     foreign_keys=ON enforces FK constraints (off by default in SQLite).
     synchronous=NORMAL is the right tradeoff for a single-user local app.
     """
-    engine = create_engine(database_url, future=True)
+    engine = create_engine(database_url, future=True, json_serializer=_json_serializer)
 
     @event.listens_for(engine, "connect")
     def _set_sqlite_pragmas(dbapi_connection, connection_record):

@@ -24,6 +24,15 @@ def _utcnow_naive() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+def _maybe_to_dict(obj: Any) -> Any:
+    """Convert plaid-python model objects to plain dicts; pass through if already a dict."""
+    if isinstance(obj, dict):
+        return obj
+    if hasattr(obj, "to_dict"):
+        return obj.to_dict()
+    return obj
+
+
 def _parse_date(value: Any) -> date | None:
     """Plaid returns ISO date strings; sometimes datetime.date instances."""
     if value is None:
@@ -162,7 +171,17 @@ def sync_transactions(
             session.commit()
             raise
 
-        page = response  # has .added, .modified, .removed, .has_more, .next_cursor
+        # plaid-python returns model objects (Transaction, RemovedTransaction, ...).
+        # Convert to plain dicts so they JSON-serialize when stored in raw_payload.
+        # Tests pass dicts directly; pass-through in that case.
+        from types import SimpleNamespace
+        page = SimpleNamespace(
+            added=[_maybe_to_dict(t) for t in response.added],
+            modified=[_maybe_to_dict(t) for t in response.modified],
+            removed=[_maybe_to_dict(r) for r in response.removed],
+            has_more=response.has_more,
+            next_cursor=response.next_cursor,
+        )
         apply_sync_page(session, item_id=item_id, page=page)
         # Each page commits independently — a 500-page Item that fails on page 487
         # keeps pages 1-486 committed and resumes at 487 next run.
