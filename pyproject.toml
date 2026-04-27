@@ -28,6 +28,9 @@ packages = ["core"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 addopts = "-ra --strict-markers"
+markers = [
+    "sandbox: tests that hit Plaid Sandbox over the network (requires PLAID_CLIENT_ID/PLAID_SECRET in env). Skipped by default; run with `pytest -m sandbox`.",
+]
 
 [tool.coverage.run]
 source = ["core"]

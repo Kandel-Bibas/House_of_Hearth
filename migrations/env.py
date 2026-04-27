@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -9,6 +10,12 @@ config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Honor DATABASE_URL if set (overrides alembic.ini default).
+# Tests set this via env={"DATABASE_URL": ...}; CLI users can `DATABASE_URL=... alembic upgrade head`.
+_env_url = os.environ.get("DATABASE_URL")
+if _env_url:
+    config.set_main_option("sqlalchemy.url", _env_url)
 
 target_metadata = Base.metadata
 
