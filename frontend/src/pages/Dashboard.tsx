@@ -1,15 +1,27 @@
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { useCategorySpend, useNetWorth } from "../api/queries";
 import { Money } from "../components/Money";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "../components/ui/chart";
 
 const today = new Date().toISOString().slice(0, 10);
 const thirtyDaysAgo = new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10);
 
+const chartConfig = {
+  total: {
+    label: "Spend",
+    color: "var(--chart-1)",
+  },
+} satisfies ChartConfig;
+
 export function Dashboard() {
   const { data: nw, isLoading: nwLoading } = useNetWorth();
   const { data: spend, isLoading: spendLoading } = useCategorySpend(thirtyDaysAgo, today);
-
-  const max = (spend ?? []).reduce((m, r) => Math.max(m, r.total), 0);
 
   return (
     <div className="grid gap-6">
@@ -76,23 +88,37 @@ export function Dashboard() {
             <p className="text-muted-foreground text-sm">No spending recorded.</p>
           )}
           {spend && spend.length > 0 && (
-            <div className="grid gap-2">
-              {spend.map((row) => (
-                <div key={row.category_primary} className="flex items-center gap-3">
-                  <div className="w-44 text-sm text-muted-foreground">{row.category_primary}</div>
-                  <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-foreground"
-                      style={{ width: `${(row.total / max) * 100}%` }}
+            <ChartContainer config={chartConfig} className="aspect-auto h-[400px] w-full">
+              <BarChart
+                accessibilityLayer
+                data={spend}
+                layout="vertical"
+                margin={{ left: 16, right: 16, top: 8, bottom: 8 }}
+              >
+                <CartesianGrid horizontal={false} strokeDasharray="3 3" />
+                <XAxis
+                  type="number"
+                  tickFormatter={(v) => `$${Number(v).toLocaleString()}`}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="category_primary"
+                  width={140}
+                  tick={{ fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      formatter={(value) => `$${Number(value).toLocaleString()}`}
                     />
-                  </div>
-                  <div className="w-24 text-right text-sm font-medium">
-                    <Money value={row.total} />
-                  </div>
-                  <div className="w-12 text-right text-xs text-muted-foreground">{row.count}</div>
-                </div>
-              ))}
-            </div>
+                  }
+                />
+                <Bar dataKey="total" fill="var(--color-total)" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ChartContainer>
           )}
         </CardContent>
       </Card>
