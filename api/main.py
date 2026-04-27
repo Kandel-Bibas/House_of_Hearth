@@ -25,6 +25,18 @@ def create_app() -> FastAPI:
 
     from api.routes import plaid as plaid_routes
     app.include_router(plaid_routes.router)
+    from api.routes import (
+        accounts as accounts_routes,
+        transactions as transactions_routes,
+        holdings as holdings_routes,
+        networth as networth_routes,
+        categories as categories_routes,
+    )
+    app.include_router(accounts_routes.router)
+    app.include_router(transactions_routes.router)
+    app.include_router(holdings_routes.router)
+    app.include_router(networth_routes.router)
+    app.include_router(categories_routes.router)
     return app
 
 
