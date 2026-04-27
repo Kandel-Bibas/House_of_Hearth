@@ -27,7 +27,13 @@ from core.db import Account, Institution, Item
 from core.plaid.tokens import store_encrypted_token
 
 
-_PRODUCTS = [Products("transactions"), Products("investments")]
+# `transactions` is required (every bank/credit card supports it).
+# `investments` is optional — included only for institutions that actually
+# offer brokerage data (Robinhood, Fidelity, etc.). Listing it under
+# `products` would force Plaid to reject every non-brokerage institution
+# (Amex, Chase, Wells Fargo, etc.) with "Connectivity not supported."
+_REQUIRED_PRODUCTS = [Products("transactions")]
+_OPTIONAL_PRODUCTS = [Products("investments")]
 _COUNTRY_CODES = [CountryCode("US")]
 
 
@@ -38,7 +44,8 @@ def _utcnow_naive() -> datetime:
 def create_link_token(client: PlaidApi, *, client_user_id: str) -> str:
     """Ask Plaid for a short-lived Link token. The frontend uses it to open the iframe."""
     request = LinkTokenCreateRequest(
-        products=_PRODUCTS,
+        products=_REQUIRED_PRODUCTS,
+        optional_products=_OPTIONAL_PRODUCTS,
         client_name="Finance Tracker",
         country_codes=_COUNTRY_CODES,
         language="en",
