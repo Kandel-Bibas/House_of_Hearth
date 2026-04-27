@@ -11,7 +11,7 @@ const items = [
 
 export function Sidebar() {
   return (
-    <nav className="w-56 shrink-0 border-r border-gray-200 bg-white p-4">
+    <nav className="w-56 shrink-0 border-r border-border bg-card p-4">
       <h1 className="text-xl font-semibold mb-6">Finance Tracker</h1>
       <ul className="flex flex-col gap-1">
         {items.map(({ to, label, icon: Icon }) => (
