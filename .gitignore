@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# Env / secrets / data
+.env
+*.db
+*.db-shm
+*.db-wal
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Frontend (used in later plans)
+node_modules/
+
+# Editors / OS
+.DS_Store
+.vscode/
+.idea/
