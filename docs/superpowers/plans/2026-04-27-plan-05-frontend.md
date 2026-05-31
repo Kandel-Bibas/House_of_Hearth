@@ -67,7 +67,7 @@ If Node itself is missing, BLOCK and report — the user needs to install Node 2
 - [ ] **Step 2: Scaffold the Vite project**
 
 ```bash
-cd /Users/bibas/personal/finance-tracker
+cd /path/to/house_of_hearth
 # Use the React + TS template. -- separates pnpm/npm args from create-vite args.
 pnpm create vite frontend --template react-ts || npm create vite@latest frontend -- --template react-ts
 ```
@@ -139,7 +139,7 @@ export default function App() {
 - [ ] **Step 7: Confirm Vite dev server boots cleanly (then stop it)**
 
 ```bash
-cd /Users/bibas/personal/finance-tracker/frontend
+cd /path/to/house_of_hearth/frontend
 timeout 6 pnpm dev 2>&1 | head -20 || true
 ```
 
@@ -148,7 +148,7 @@ timeout 6 pnpm dev 2>&1 | head -20 || true
 - [ ] **Step 8: Commit**
 
 ```bash
-cd /Users/bibas/personal/finance-tracker
+cd /path/to/house_of_hearth
 # .gitignore already excludes frontend/node_modules.
 git add frontend/package.json frontend/tsconfig.json frontend/tsconfig.node.json \
         frontend/vite.config.ts frontend/index.html \
@@ -516,7 +516,7 @@ export function Holdings() {
 - [ ] **Step 7: Boot smoke test**
 
 ```bash
-cd /Users/bibas/personal/finance-tracker/frontend
+cd /path/to/house_of_hearth/frontend
 timeout 6 pnpm dev 2>&1 | head -20 || true
 ```
 
@@ -525,7 +525,7 @@ Expected: Vite serves cleanly on `:5173`, no compile errors.
 - [ ] **Step 8: Commit**
 
 ```bash
-cd /Users/bibas/personal/finance-tracker
+cd /path/to/house_of_hearth
 git add frontend/src
 git commit -m "feat(frontend): API client + TanStack Query + Router + sidebar (Plan 5, Task 2)"
 ```
@@ -705,7 +705,7 @@ export function Accounts() {
 - [ ] **Step 5: Boot smoke**
 
 ```bash
-cd /Users/bibas/personal/finance-tracker/frontend
+cd /path/to/house_of_hearth/frontend
 timeout 6 pnpm dev 2>&1 | head -20 || true
 ```
 
@@ -714,7 +714,7 @@ Expected: clean compile.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/bibas/personal/finance-tracker
+cd /path/to/house_of_hearth
 git add frontend/src
 git commit -m "feat(frontend): accounts page + Plaid Link Add Account + sync button (Plan 5, Task 3)"
 ```
@@ -866,9 +866,9 @@ export function Transactions() {
 - [ ] **Step 3: Boot smoke + commit**
 
 ```bash
-cd /Users/bibas/personal/finance-tracker/frontend
+cd /path/to/house_of_hearth/frontend
 timeout 6 pnpm dev 2>&1 | head -20 || true
-cd /Users/bibas/personal/finance-tracker
+cd /path/to/house_of_hearth
 git add frontend/src
 git commit -m "feat(frontend): transactions page with date/category/merchant filters (Plan 5, Task 4)"
 ```
@@ -1009,9 +1009,9 @@ export function Holdings() {
 - [ ] **Step 3: Boot smoke + commit**
 
 ```bash
-cd /Users/bibas/personal/finance-tracker/frontend
+cd /path/to/house_of_hearth/frontend
 timeout 6 pnpm dev 2>&1 | head -20 || true
-cd /Users/bibas/personal/finance-tracker
+cd /path/to/house_of_hearth
 git add frontend/src
 git commit -m "feat(frontend): dashboard + holdings pages (Plan 5, Task 5)"
 ```
@@ -1106,7 +1106,7 @@ if __name__ == "__main__":
 ```
 
 ```bash
-chmod +x /Users/bibas/personal/finance-tracker/scripts/run-dev.py
+chmod +x /path/to/house_of_hearth/scripts/run-dev.py
 ```
 
 - [ ] **Step 2: Update `Makefile`**

@@ -54,7 +54,7 @@ from core.queries import (
 - [ ] **Step 1: Create the queries package directories**
 
 ```bash
-cd /Users/bibas/personal/finance-tracker
+cd /path/to/house_of_hearth
 mkdir -p core/queries tests/queries
 touch core/queries/__init__.py tests/queries/__init__.py
 ```

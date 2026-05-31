@@ -89,7 +89,7 @@ dev = [
 - [ ] **Step 2: Reinstall**
 
 ```bash
-cd /Users/bibas/personal/finance-tracker
+cd /path/to/house_of_hearth
 .venv/bin/pip install -e ".[dev]"
 ```
 
@@ -1140,7 +1140,7 @@ Write to `scripts/finance-tracker.command`:
 # Symlinked to ~/Desktop/Finance Tracker.command.
 
 set -e
-PROJECT="/Users/bibas/personal/finance-tracker"
+PROJECT="/path/to/house_of_hearth"
 
 cd "$PROJECT"
 echo "Finance Tracker — starting..."
@@ -1156,7 +1156,7 @@ chmod +x scripts/finance-tracker.command
 - [ ] **Step 3: Symlink to ~/Desktop**
 
 ```bash
-ln -sf "/Users/bibas/personal/finance-tracker/scripts/finance-tracker.command" \
+ln -sf "/path/to/house_of_hearth/scripts/finance-tracker.command" \
        "$HOME/Desktop/Finance Tracker.command"
 ```
 

@@ -62,13 +62,13 @@ finance-tracker/
 - [ ] **Step 1: Initialize the git repository**
 
 ```bash
-cd /Users/bibas/personal/finance-tracker
+cd /path/to/house_of_hearth
 git init
-git config user.email "rupak@arroyodev.com"
+git config user.email "Kandel-Bibas"
 git config user.name "Rupak"
 ```
 
-Expected: `Initialized empty Git repository in /Users/bibas/personal/finance-tracker/.git/`
+Expected: `Initialized empty Git repository in /path/to/house_of_hearth/.git/`
 
 - [ ] **Step 2: Create `.gitignore`**
 

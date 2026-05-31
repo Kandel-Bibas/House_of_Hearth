@@ -2,7 +2,7 @@
 
 **Status:** approved (brainstorming) — pending implementation plan
 **Date:** 2026-04-26
-**Owner:** rupak@arroyodev.com
+**Owner:** Kandel-Bibas
 
 ## 1. Goals
 
