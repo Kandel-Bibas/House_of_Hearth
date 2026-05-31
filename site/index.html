@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>House of Hearth — local-first finance, answerable in plain English</title>
+  <meta name="description" content="A local-first personal finance tracker built around Plaid, FastAPI and React — with a read-only MCP server that lets Claude answer questions about your money. Your data never leaves your machine." />
+
+  <meta property="og:title" content="House of Hearth" />
+  <meta property="og:description" content="Local-first personal finance tracker you can ask in plain English. FastAPI · React · Plaid · encrypted SQLite · MCP." />
+  <meta property="og:type" content="website" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg:        #14100c;
+      --bg-soft:   #1b1611;
+      --panel:     #211a14;
+      --panel-2:   #271f17;
+      --border:    #3a2f24;
+      --text:      #f3ebe1;
+      --muted:     #b6a692;
+      --faint:     #8a7a67;
+      --ember:     #ff8a3d;
+      --ember-2:   #ff5e3a;
+      --gold:      #f5c277;
+      --green:     #7bd88f;
+      --radius:    16px;
+      --maxw:      1080px;
+      --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* warm hearth glow behind the hero */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -20% 0 auto 0;
+      height: 80vh;
+      background:
+        radial-gradient(60% 55% at 50% 0%, rgba(255,138,61,0.20), transparent 70%),
+        radial-gradient(40% 40% at 80% 10%, rgba(255,94,58,0.12), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    /* ---------- nav ---------- */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 0;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 600; letter-spacing: -0.01em; }
+    .brand .mark {
+      width: 30px; height: 30px; display: grid; place-items: center;
+      border-radius: 9px;
+      background: linear-gradient(160deg, #2c2117, #1a130d);
+      border: 1px solid var(--border);
+      box-shadow: 0 0 22px rgba(255,138,61,0.25);
+    }
+    .brand .name { font-family: "Fraunces", serif; font-size: 19px; }
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .ghost {
+      padding: 9px 15px; border-radius: 10px; color: var(--muted);
+      font-size: 14px; font-weight: 500; transition: .18s;
+    }
+    .ghost:hover { color: var(--text); background: var(--panel); }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 15px;
+      border: 1px solid transparent; cursor: pointer; transition: transform .15s, box-shadow .2s, background .2s;
+    }
+    .btn svg { width: 17px; height: 17px; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--ember), var(--ember-2));
+      color: #1a0e06;
+      box-shadow: 0 8px 30px rgba(255,94,58,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(255,94,58,0.45); }
+    .btn-ghost { background: var(--panel); border-color: var(--border); color: var(--text); }
+    .btn-ghost:hover { transform: translateY(-2px); border-color: #5a4633; background: var(--panel-2); }
+
+    /* ---------- hero ---------- */
+    header { padding: 64px 0 40px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 13px; border-radius: 999px;
+      background: var(--panel); border: 1px solid var(--border);
+      font-size: 13px; color: var(--gold); font-weight: 500; margin-bottom: 26px;
+    }
+    .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
+    h1 {
+      font-family: "Fraunces", serif;
+      font-weight: 500;
+      font-size: clamp(38px, 6.4vw, 70px);
+      line-height: 1.04;
+      letter-spacing: -0.02em;
+      margin: 0 0 22px;
+      max-width: 16ch;
+    }
+    h1 .em { background: linear-gradient(120deg, var(--gold), var(--ember)); -webkit-background-clip: text; background-clip: text; color: transparent; font-style: italic; }
+    .lede { font-size: clamp(17px, 2.2vw, 20px); color: var(--muted); max-width: 60ch; margin: 0 0 34px; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+    .cta-note { color: var(--faint); font-size: 13.5px; display: flex; align-items: center; gap: 7px; }
+
+    /* ---------- chat mock ---------- */
+    .ask {
+      margin-top: 64px;
+      display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 28px; align-items: center;
+    }
+    .ask .copy h2 { font-family: "Fraunces", serif; font-weight: 500; font-size: clamp(26px,3.4vw,36px); margin: 0 0 14px; letter-spacing: -0.015em; }
+    .ask .copy p { color: var(--muted); margin: 0 0 16px; }
+    .chip { font-family: var(--mono); font-size: 12.5px; color: var(--gold); background: var(--panel); border: 1px solid var(--border); padding: 4px 10px; border-radius: 8px; }
+
+    .chat {
+      background: linear-gradient(180deg, var(--panel), var(--bg-soft));
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 22px; box-shadow: 0 30px 70px rgba(0,0,0,0.45);
+    }
+    .chat .head { display: flex; align-items: center; gap: 8px; color: var(--faint); font-size: 12px; margin-bottom: 16px; font-family: var(--mono); }
+    .bubble { padding: 13px 16px; border-radius: 14px; margin-bottom: 12px; font-size: 14.5px; }
+    .bubble.user { background: var(--panel-2); border: 1px solid var(--border); border-bottom-right-radius: 4px; margin-left: 28px; }
+    .bubble.ai { background: linear-gradient(135deg, rgba(255,138,61,0.14), rgba(255,94,58,0.06)); border: 1px solid #4a3826; border-bottom-left-radius: 4px; margin-right: 14px; }
+    .bubble .who { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); margin-bottom: 5px; }
+    .bubble.ai .who { color: var(--gold); }
+    .bubble b { color: var(--text); }
+    .tool { font-family: var(--mono); font-size: 11.5px; color: var(--faint); margin-top: 4px; }
+
+    /* ---------- section frame ---------- */
+    section { padding: 78px 0; position: relative; z-index: 1; }
+    .section-head { text-align: center; max-width: 60ch; margin: 0 auto 48px; }
+    .section-head h2 { font-family: "Fraunces", serif; font-weight: 500; font-size: clamp(28px, 4vw, 42px); margin: 0 0 14px; letter-spacing: -0.02em; }
+    .section-head p { color: var(--muted); margin: 0; font-size: 17px; }
+
+    /* ---------- features ---------- */
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 26px; transition: transform .18s, border-color .2s, background .2s;
+    }
+    .card:hover { transform: translateY(-4px); border-color: #5a4632; background: var(--panel-2); }
+    .card .ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; margin-bottom: 16px;
+      background: linear-gradient(160deg, rgba(255,138,61,0.18), rgba(255,94,58,0.06)); border: 1px solid #4a3826; }
+    .card .ic svg { width: 20px; height: 20px; stroke: var(--gold); }
+    .card h3 { font-size: 17px; margin: 0 0 8px; letter-spacing: -0.01em; }
+    .card p { color: var(--muted); font-size: 14.5px; margin: 0; }
+
+    /* ---------- get started ---------- */
+    .term {
+      background: #0e0b08; border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,0.5); max-width: 760px; margin: 0 auto;
+    }
+    .term .bar { display: flex; align-items: center; gap: 8px; padding: 13px 16px; background: var(--panel); border-bottom: 1px solid var(--border); }
+    .term .bar .d { width: 11px; height: 11px; border-radius: 50%; }
+    .term .bar .t { margin-left: 10px; font-family: var(--mono); font-size: 12px; color: var(--faint); }
+    .term pre { margin: 0; padding: 22px; font-family: var(--mono); font-size: 13.5px; line-height: 1.85; color: #e7dccb; overflow-x: auto; }
+    .term .c { color: var(--faint); }
+    .term .p { color: var(--ember); }
+    .term .o { color: var(--green); }
+    .gs-note { text-align: center; color: var(--muted); margin: 26px auto 0; max-width: 56ch; font-size: 15px; }
+    .gs-note a { color: var(--gold); border-bottom: 1px solid rgba(245,194,119,0.4); }
+
+    /* ---------- platform ---------- */
+    .plat { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; max-width: 820px; margin: 0 auto; }
+    .plat .p-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 22px; text-align: center; }
+    .plat .p-card .os { font-weight: 600; margin-bottom: 6px; }
+    .plat .p-card .be { font-family: var(--mono); font-size: 12.5px; color: var(--gold); }
+    .plat .p-card .st { color: var(--faint); font-size: 13px; margin-top: 8px; }
+
+    /* ---------- stack ---------- */
+    .stack { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 760px; margin: 0 auto; }
+    .tag { font-family: var(--mono); font-size: 13px; color: var(--muted); background: var(--panel); border: 1px solid var(--border); padding: 8px 14px; border-radius: 10px; }
+
+    /* ---------- footer ---------- */
+    footer { border-top: 1px solid var(--border); padding: 40px 0; margin-top: 30px; }
+    .foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+    .foot .links { display: flex; gap: 20px; flex-wrap: wrap; }
+    .foot a { color: var(--muted); font-size: 14px; transition: .15s; }
+    .foot a:hover { color: var(--gold); }
+    .foot .copy { color: var(--faint); font-size: 13px; }
+
+    @media (max-width: 860px) {
+      .ask { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr 1fr; }
+      .plat { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr; }
+      .nav-links .ghost.hide-sm { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="#top">
+        <span class="mark">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 2c1.5 3 4.5 4.2 4.5 8.5A4.5 4.5 0 0 1 12 15a4.5 4.5 0 0 1-4.5-4.5C7.5 6.2 10.5 5 12 2Z" fill="url(#g)"/>
+            <path d="M12 9c.8 1 1.8 1.7 1.8 3.2A1.8 1.8 0 0 1 12 14a1.8 1.8 0 0 1-1.8-1.8C10.2 10.7 11.2 10 12 9Z" fill="#fff6e8"/>
+            <defs><linearGradient id="g" x1="12" y1="2" x2="12" y2="15" gradientUnits="userSpaceOnUse"><stop stop-color="#ffb454"/><stop offset="1" stop-color="#ff5e3a"/></linearGradient></defs>
+          </svg>
+        </span>
+        <span class="name">House of Hearth</span>
+      </a>
+      <div class="nav-links">
+        <a class="ghost hide-sm" href="#features">Features</a>
+        <a class="ghost hide-sm" href="#get-started">Get started</a>
+        <a class="ghost" href="https://github.com/Kandel-Bibas/House_of_Hearth">GitHub ↗</a>
+      </div>
+    </nav>
+  </div>
+
+  <header id="top">
+    <div class="wrap">
+      <span class="eyebrow"><span class="dot"></span> Local-first · open source</span>
+      <h1>Your money, on your machine — <span class="em">answerable</span> in plain English.</h1>
+      <p class="lede">
+        House of Hearth links your bank, credit and brokerage accounts through Plaid, keeps everything
+        in a single encrypted SQLite file, and ships a read-only MCP server so you can simply
+        <em>ask Claude</em> about your finances. Nothing is hosted. Nothing leaves your laptop.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#get-started">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          Get started
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/Kandel-Bibas/House_of_Hearth">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.54-3.88-1.54-.53-1.34-1.3-1.7-1.3-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.7 5.4-5.26 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg>
+          Star on GitHub
+        </a>
+        <span class="cta-note">MIT licensed · runs on macOS, Windows &amp; Linux</span>
+      </div>
+
+      <div class="ask">
+        <div class="copy">
+          <span class="chip">read-only · 5 MCP tools</span>
+          <h2 style="margin-top:16px;">Ask, don't dig.</h2>
+          <p>
+            Spreadsheets make you hunt. House of Hearth's local MCP server hands Claude five
+            read-only query tools — so you ask a question in your own words and get an answer
+            straight from your own data.
+          </p>
+          <p style="color:var(--faint); font-size:14px;">
+            The agent can read your spending. It can never move money, call Plaid, or decrypt
+            your bank tokens.
+          </p>
+        </div>
+        <div class="chat" aria-label="Example conversation with Claude">
+          <div class="head">● claude desktop · finance-tracker</div>
+          <div class="bubble user">
+            <div class="who">You</div>
+            What did I spend on dining out last month, and what was the biggest hit?
+          </div>
+          <div class="bubble ai">
+            <div class="who">Claude</div>
+            You spent <b>$342.18</b> on dining across <b>11 transactions</b>. The largest was
+            <b>$85.00 at Chez Panisse</b> on Apr 5.
+            <div class="tool">↳ called category_spend() · search_transactions()</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Built like a vault, not a SaaS.</h2>
+        <p>Every design choice favours your privacy and your control.</p>
+      </div>
+      <div class="grid">
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M8 10h8M8 14h5M21 12a9 9 0 1 1-3.5-7.1L21 3v6h-6"/></svg></div>
+          <h3>Natural-language finance</h3>
+          <p>A local stdio MCP server exposes five read-only tools so Claude answers questions from your real numbers.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+          <h3>Secrets encrypted at rest</h3>
+          <p>Plaid tokens are sealed with AES-GCM; the master key lives in your OS keychain, never on disk. A stolen DB file is inert.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M21 4v4h-4M3 20v-4h4"/></svg></div>
+          <h3>Incremental sync, crash-safe</h3>
+          <p>Plaid's cursor sync commits one page at a time and soft-deletes removed rows — a sync that dies mid-run resumes cleanly.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+          <h3>One core, two consumers</h3>
+          <p>A pure-Python <span class="chip">core/</span> layer is shared by the FastAPI app and the MCP server, so query logic lives in exactly one place.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3l8 4v5c0 4.5-3 8-8 9-5-1-8-4.5-8-9V7l8-4Z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>Least-privilege AI</h3>
+          <p>The MCP server opens SQLite read-only, never imports the crypto layer, and has no path to Plaid. Worst case: it reads.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg></div>
+          <h3>Yours, end to end</h3>
+          <p>No cloud, no public ingress, no webhooks. It runs only when you open it — on your hardware, under your login.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="get-started" style="background:linear-gradient(180deg, transparent, rgba(255,138,61,0.04), transparent);">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Get started in four commands.</h2>
+        <p>Clone it, add your Plaid Sandbox keys, and you're running locally in minutes.</p>
+      </div>
+      <div class="term">
+        <div class="bar">
+          <span class="d" style="background:#ff5f57"></span><span class="d" style="background:#febc2e"></span><span class="d" style="background:#28c840"></span>
+          <span class="t">bash — house_of_hearth</span>
+        </div>
+<pre><span class="c"># 1 — clone</span>
+<span class="p">$</span> git clone https://github.com/Kandel-Bibas/House_of_Hearth.git
+<span class="p">$</span> cd House_of_Hearth
+
+<span class="c"># 2 — backend (Python 3.11+)</span>
+<span class="p">$</span> python3 -m venv .venv && source .venv/bin/activate
+<span class="p">$</span> pip install -e ".[dev]" && cp .env.example .env   <span class="c"># add Plaid keys</span>
+
+<span class="c"># 3 — frontend</span>
+<span class="p">$</span> cd frontend && pnpm install && cd ..
+
+<span class="c"># 4 — run the API + UI together</span>
+<span class="p">$</span> make dev
+<span class="o">→ API   http://localhost:8000
+→ UI    http://localhost:5173</span></pre>
+      </div>
+      <p class="gs-note">
+        Full setup, the HTTP/MCP reference, and the security model are in the
+        <a href="https://github.com/Kandel-Bibas/House_of_Hearth#readme">README</a>.
+        Wiring it into Claude Desktop takes one config block — see the
+        <a href="https://github.com/Kandel-Bibas/House_of_Hearth/blob/main/docs/MCP_SETUP.md">MCP setup guide</a>.
+      </p>
+    </div>
+  </section>
+
+  <section style="padding-top:0;">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Runs where you do.</h2>
+        <p>The secrets layer uses the cross-platform <span class="chip">keyring</span> library, so your master key sits in the native vault on every OS.</p>
+      </div>
+      <div class="plat">
+        <div class="p-card"><div class="os">macOS</div><div class="be">Keychain</div><div class="st">Built &amp; tested here · double-click launcher</div></div>
+        <div class="p-card"><div class="os">Windows</div><div class="be">Credential Locker</div><div class="st">Run with <code>make dev</code> / uvicorn + vite</div></div>
+        <div class="p-card"><div class="os">Linux</div><div class="be">Secret Service</div><div class="st">GNOME Keyring / KWallet on the desktop</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0;">
+    <div class="wrap">
+      <div class="section-head"><h2 style="font-size:clamp(22px,3vw,30px);">Under the hood</h2></div>
+      <div class="stack">
+        <span class="tag">Python 3.11+</span>
+        <span class="tag">FastAPI</span>
+        <span class="tag">SQLAlchemy 2.0</span>
+        <span class="tag">Alembic</span>
+        <span class="tag">SQLite · WAL</span>
+        <span class="tag">Plaid</span>
+        <span class="tag">AES-GCM</span>
+        <span class="tag">MCP / FastMCP</span>
+        <span class="tag">React 19</span>
+        <span class="tag">TypeScript</span>
+        <span class="tag">Vite</span>
+        <span class="tag">Tailwind v4</span>
+        <span class="tag">TanStack Query</span>
+        <span class="tag">Recharts</span>
+        <span class="tag">pytest</span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap foot">
+      <a class="brand" href="#top">
+        <span class="mark">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 2c1.5 3 4.5 4.2 4.5 8.5A4.5 4.5 0 0 1 12 15a4.5 4.5 0 0 1-4.5-4.5C7.5 6.2 10.5 5 12 2Z" fill="url(#g2)"/>
+            <defs><linearGradient id="g2" x1="12" y1="2" x2="12" y2="15" gradientUnits="userSpaceOnUse"><stop stop-color="#ffb454"/><stop offset="1" stop-color="#ff5e3a"/></linearGradient></defs>
+          </svg>
+        </span>
+        <span class="name">House of Hearth</span>
+      </a>
+      <div class="links">
+        <a href="https://github.com/Kandel-Bibas/House_of_Hearth">GitHub</a>
+        <a href="https://github.com/Kandel-Bibas/House_of_Hearth#readme">README</a>
+        <a href="https://github.com/Kandel-Bibas/House_of_Hearth/blob/main/docs/MCP_SETUP.md">MCP setup</a>
+        <a href="https://github.com/Kandel-Bibas/House_of_Hearth/blob/main/LICENSE">MIT License</a>
+      </div>
+      <div class="copy">© 2026 Kandel-Bibas · local-first by design</div>
+    </div>
+  </footer>
+</body>
+</html>
