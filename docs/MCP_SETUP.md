@@ -7,15 +7,17 @@ The MCP server is a local stdio process. Claude Desktop launches it on demand vi
 1. Open `~/Library/Application Support/Claude/claude_desktop_config.json` in your editor.
    If it doesn't exist, create it with `{"mcpServers": {}}`.
 
-2. Add this entry under `mcpServers` (merge with any existing entries):
+2. Add this entry under `mcpServers` (merge with any existing entries). Replace
+   `/path/to/house_of_hearth` with the absolute path to your clone — run `pwd` in
+   the repo root to get it:
 
    ```json
    {
      "mcpServers": {
        "finance-tracker": {
-         "command": "/Users/bibas/personal/finance-tracker/.venv/bin/python",
+         "command": "/path/to/house_of_hearth/.venv/bin/python",
          "args": ["-m", "mcp_server"],
-         "cwd": "/Users/bibas/personal/finance-tracker",
+         "cwd": "/path/to/house_of_hearth",
          "env": {
            "DATABASE_URL": "sqlite:///finance.db"
          }
@@ -34,8 +36,9 @@ In Claude Desktop, after restart, ask: "What's my net worth?" — Claude will ca
 
 ## Common issues
 
-- **"Schema out of date" errors from every tool** — open `~/Desktop/Finance Tracker.command`
-  once. The startup hook runs Alembic, then MCP queries work.
+- **"Schema out of date" errors from every tool** — open the app once (run `make dev`
+  from the repo root, or use the desktop launcher). The startup hook runs Alembic, then
+  MCP queries work.
 - **Tool errors mentioning Keychain** — none should occur. The MCP server never imports
   `core.crypto`. If you see one, something is wrong; please re-run the test suite
   (`make test`) before reporting.
