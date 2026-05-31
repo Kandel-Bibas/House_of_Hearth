@@ -4,12 +4,15 @@ The MCP server is a local stdio process. Claude Desktop launches it on demand vi
 
 ## One-time setup
 
-1. Open `~/Library/Application Support/Claude/claude_desktop_config.json` in your editor.
-   If it doesn't exist, create it with `{"mcpServers": {}}`.
+1. Open your Claude Desktop config in your editor (create it with `{"mcpServers": {}}` if missing):
+   - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+   - **Linux:** `~/.config/Claude/claude_desktop_config.json`
 
 2. Add this entry under `mcpServers` (merge with any existing entries). Replace
    `/path/to/house_of_hearth` with the absolute path to your clone — run `pwd` in
    the repo root to get it:
+   (On Windows the interpreter is `.venv\\Scripts\\python.exe` and `cwd` uses backslashes.)
 
    ```json
    {

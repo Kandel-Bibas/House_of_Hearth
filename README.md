@@ -10,7 +10,9 @@
 ![MCP](https://img.shields.io/badge/MCP-read--only-7C3AED)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-House of Hearth links your bank, credit, and brokerage accounts through [Plaid](https://plaid.com), stores everything in a single local SQLite file, and gives you two ways to explore it: a React dashboard (net worth, cash flow, spending by category, a filterable transaction ledger, holdings) and a local MCP server that exposes read-only query tools to Claude Desktop. Nothing is hosted — it runs only when you open it, and your bank access tokens are encrypted at rest with a key kept in the macOS Keychain.
+**[🔥 Live site](https://kandel-bibas.github.io/House_of_Hearth/) · [Quick start](#quick-start) · [Connect Claude (MCP)](docs/MCP_SETUP.md)**
+
+House of Hearth links your bank, credit, and brokerage accounts through [Plaid](https://plaid.com), stores everything in a single local SQLite file, and gives you two ways to explore it: a React dashboard (net worth, cash flow, spending by category, a filterable transaction ledger, holdings) and a local MCP server that exposes read-only query tools to Claude Desktop. Nothing is hosted — it runs only when you open it, and your bank access tokens are encrypted at rest with a key kept in your OS keychain (macOS, Windows, or Linux).
 
 ---
 
@@ -51,7 +53,7 @@ House of Hearth links your bank, credit, and brokerage accounts through [Plaid](
                   │  │ plaid             │──┼──►│  Plaid API        │
                   │  └───────────────────┘  │   └───────────────────┘
                   │  ┌───────────────────┐  │   ┌───────────────────┐
-                  │  │ crypto            │──┼──►│  macOS Keychain   │
+                  │  │ crypto            │──┼──►│  OS keychain      │
                   │  └───────────────────┘  │   └───────────────────┘
                   │  ┌───────────────────┐  │
                   │  │ db (SQLAlchemy)   │──┼──► finance.db (SQLite, WAL)
@@ -65,7 +67,7 @@ House of Hearth links your bank, credit, and brokerage accounts through [Plaid](
 | Layer | Responsibility |
 |---|---|
 | `core/db` | SQLAlchemy 2.x models for 6 tables, engine factory (WAL + foreign-key pragmas), Alembic migrations |
-| `core/crypto` | macOS Keychain master-key access + AES-GCM token cipher |
+| `core/crypto` | OS-keychain master-key access (cross-platform via `keyring`) + AES-GCM token cipher |
 | `core/plaid` | Plaid client factory, Link flow, cursor sync, balance/holdings refresh, error classification, orchestrator |
 | `core/queries` | Read-only query functions (`net_worth`, `search_transactions`, `category_spend`, `list_holdings`, `list_accounts`) returning JSON-safe dicts |
 | `api/` | FastAPI routes that wrap `core/`; runs migrations + background auto-sync on startup |
@@ -80,7 +82,7 @@ The full design rationale and data model live in [`docs/superpowers/specs/2026-0
 
 - **Backend:** Python 3.11+, FastAPI, SQLAlchemy 2.0, Alembic, Uvicorn, SQLite (WAL mode)
 - **Banking data:** Plaid (`plaid-python`) — Link, `/transactions/sync`, balances, investment holdings
-- **Security:** `cryptography` (AES-GCM), `keyring` (macOS Keychain)
+- **Security:** `cryptography` (AES-GCM), `keyring` (cross-platform OS keychain)
 - **AI integration:** Model Context Protocol via `mcp` (FastMCP)
 - **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui, TanStack Query, React Router, Recharts, `react-plaid-link`
 - **Tooling & tests:** pytest (+ `pytest-cov`, `httpx`), a Makefile, and a Python dev supervisor that runs the API and Vite together
@@ -99,8 +101,8 @@ The full design rationale and data model live in [`docs/superpowers/specs/2026-0
 ## Quick start
 
 ```bash
-git clone https://github.com/Kandel-Bibas/house_of_hearth.git
-cd house_of_hearth
+git clone https://github.com/Kandel-Bibas/House_of_Hearth.git
+cd House_of_Hearth
 ```
 
 ### 1. Backend
