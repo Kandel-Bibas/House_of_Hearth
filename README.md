@@ -17,7 +17,7 @@ House of Hearth links your bank, credit, and brokerage accounts through [Plaid](
 ## Highlights
 
 - **Natural-language finance Q&A.** A local stdio MCP server exposes five read-only tools so you can ask Claude *"what did I spend on groceries last month?"* or *"what's my net worth?"* and get answers from your own data.
-- **Secrets encrypted at rest.** Long-lived Plaid access tokens are sealed with AES-GCM (token bound to its `item_id` via AAD); the 32-byte master key lives in the macOS Keychain, never on disk. A leaked `finance.db` is useless without your login.
+- **Secrets encrypted at rest.** Long-lived Plaid access tokens are sealed with AES-GCM (token bound to its `item_id` via AAD); the 32-byte master key lives in your OS keychain (macOS Keychain / Windows Credential Locker / Linux Secret Service), never on disk. A leaked `finance.db` is useless without your login.
 - **Incremental sync with crash-resume.** Uses Plaid's `/transactions/sync` cursor, commits one page at a time, and soft-deletes removed transactions — a sync that dies on page 487 of 500 resumes cleanly instead of starting over.
 - **Two consumers, one source of truth.** A pure-Python `core/` layer (db, crypto, Plaid, queries) is shared by both the FastAPI app and the MCP server, so query logic lives in exactly one place.
 - **Least-privilege MCP surface.** The MCP server opens SQLite read-only (`?mode=ro`), never imports `core.crypto`, and has no path to Plaid. Worst case is "an agent reads your spending," never "an agent moves money."
@@ -89,7 +89,7 @@ The full design rationale and data model live in [`docs/superpowers/specs/2026-0
 
 ## Prerequisites
 
-- **macOS** — the master key is stored in the macOS Keychain (see [Security model](#security-model))
+- **An OS keychain** — macOS Keychain, Windows Credential Locker, or Linux Secret Service (GNOME Keyring/KWallet). Built and tested on macOS; the secrets layer is cross-platform via the `keyring` library.
 - **Python 3.11+**
 - **Node.js 18+** and **pnpm** (`npm install -g pnpm`)
 - A **Plaid account** for API keys — the free [Sandbox](https://plaid.com/docs/sandbox/) tier is enough to try everything
@@ -147,6 +147,8 @@ make dev
 This starts the API on **http://localhost:8000** and the Vite dev server on **http://localhost:5173**. Open the second URL in your browser. `Ctrl-C` stops both.
 
 > On first run, macOS will prompt once to allow access to the Keychain item — choose **Always Allow** so future syncs are silent.
+
+> **Windows / Linux:** it runs the same way — the master key is stored in the Windows Credential Locker or the Linux Secret Service (GNOME Keyring/KWallet) instead of the macOS Keychain, via the cross-platform `keyring` library. The only macOS-only convenience is the double-click `scripts/finance-tracker.command` launcher; elsewhere just use `make dev`. (Most Linux desktops ship a Secret Service backend; headless servers may need one configured.)
 
 ---
 
@@ -256,7 +258,7 @@ The suite is **117 tests** (116 passing, 1 skipped) across the crypto, db, Plaid
 This is a single-user, local-only app, and the security design reflects that:
 
 - **Local only.** No cloud hosting, no public ingress, no webhooks. The app runs only when you open it.
-- **Encrypted access tokens.** Plaid access tokens (which grant bank-read access) are stored AES-GCM-encrypted in `finance.db`, bound to their `item_id` via the cipher's AAD. The 32-byte master key is held in the **macOS Keychain**, never written to disk — so a copied `finance.db` is inert without your macOS login.
+- **Encrypted access tokens.** Plaid access tokens (which grant bank-read access) are stored AES-GCM-encrypted in `finance.db`, bound to their `item_id` via the cipher's AAD. The 32-byte master key is held in your **OS keychain** — macOS Keychain, Windows Credential Locker, or Linux Secret Service — never written to disk, so a copied `finance.db` is inert without your OS login.
 - **Read-only AI surface.** The MCP server opens SQLite with `?mode=ro`, never imports `core.crypto`, and cannot reach Plaid. It also refuses to serve queries if the DB schema is behind the latest migration, rather than risk stale results.
 - **Secrets stay out of git.** `.env`, `*.db`, and the WAL/SHM sidecars are gitignored.
 
@@ -268,7 +270,7 @@ Locked decisions (see the [design spec](docs/superpowers/specs/2026-04-26-financ
 
 - **Local-first**, because Plaid access tokens are sensitive enough that cloud storage would demand a far larger security investment.
 - **On-demand sync** (auto-runs on app open) — the app isn't always running; Plaid's cursor catches up incrementally.
-- **macOS-focused** — the Keychain dependency ties the current secrets layer to macOS.
+- **Cross-platform secrets, macOS-first dev** — the secrets layer uses the cross-platform `keyring` library (macOS Keychain / Windows Credential Locker / Linux Secret Service). Built and tested on macOS; the only macOS-specific piece is the double-click `.command` launcher.
 - **Single-user**, no auth wall.
 - **Current-snapshot balances** — holdings/balances overwrite each sync; the schema is ready to add a history table later.
 
